@@ -15,6 +15,8 @@ class Asteroid:
             "points_min": 9,
             "points_max": 13,
             "contact_damage": 34,
+            "salvage_min": 15,
+            "salvage_max": 25,
         },
         "medium": {
             "radius": 32,
@@ -24,6 +26,8 @@ class Asteroid:
             "points_min": 8,
             "points_max": 11,
             "contact_damage": 20,
+            "salvage_min": 8,
+            "salvage_max": 14,
         },
         "small": {
             "radius": 18,
@@ -33,6 +37,8 @@ class Asteroid:
             "points_min": 7,
             "points_max": 9,
             "contact_damage": 12,
+            "salvage_min": 3,
+            "salvage_max": 6,
         },
     }
 
@@ -57,6 +63,9 @@ class Asteroid:
         self.radius = data["radius"]
         self.health = data["health"]
         self.contact_damage = data["contact_damage"]
+
+        self.salvage_min = data["salvage_min"]
+        self.salvage_max = data["salvage_max"]
 
         # --------------------------------------------------
         # Movement

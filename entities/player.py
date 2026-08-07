@@ -37,6 +37,9 @@ class Player:
 
         self.invulnerable_timer = 0.0
 
+        # Progression
+        self.credits = 0
+
     def get_forward_direction(self):
 
         return pygame.Vector2(
@@ -124,6 +127,14 @@ class Player:
         self.health = self.max_health
 
         self.invulnerable_timer = 0.0
+
+    # ------------------------------------------------------
+    # Progression
+    # ------------------------------------------------------
+
+    def add_credits(self, amount):
+
+        self.credits += amount
 
     def draw(self, screen, camera):
 

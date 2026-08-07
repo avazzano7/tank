@@ -21,6 +21,8 @@ class AsteroidManager:
 
         self.asteroids = []
 
+        self.pending_drops = []
+
         # --------------------------------------------------
         # Read current sector configuration
         # --------------------------------------------------
@@ -253,6 +255,25 @@ class AsteroidManager:
 
 
         # ----------------------------------------------
+        # Record salvage drop
+        # ----------------------------------------------
+
+        salvage_value = random.randint(
+            asteroid.salvage_min,
+            asteroid.salvage_max,
+        )
+
+        self.pending_drops.append(
+            {
+                "position": pygame.Vector2(
+                    asteroid.position
+                ),
+                "value": salvage_value,
+            }
+        )
+
+
+        # ----------------------------------------------
         # Split asteroid
         # ----------------------------------------------
 
@@ -291,6 +312,19 @@ class AsteroidManager:
             self.asteroids.remove(
                 asteroid
             )
+
+
+    # ======================================================
+    # POP DROPS
+    # ======================================================
+
+    def pop_drops(self):
+
+        drops = self.pending_drops
+
+        self.pending_drops = []
+
+        return drops
 
 
     # ======================================================

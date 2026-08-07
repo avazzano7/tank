@@ -1,5 +1,5 @@
-WIDTH = 1200
-HEIGHT = 900
+WIDTH = 800
+HEIGHT = 600
 
 FPS = 60
 
@@ -36,3 +36,20 @@ PLAYER_COLLISION_RADIUS = 16
 
 # Seconds of invulnerability after taking a hit
 PLAYER_INVULNERABILITY_DURATION = 1.5
+
+# -----------------------------
+# Salvage
+# -----------------------------
+
+# How close the player must get to auto-collect a pickup
+SALVAGE_PICKUP_RADIUS = 40
+
+# Seconds before an uncollected pickup disappears
+SALVAGE_LIFETIME = 12.0
+
+# Value range used to scale pickup visual size
+SALVAGE_MIN_VALUE = 3
+SALVAGE_MAX_VALUE = 25
+
+SALVAGE_MIN_RADIUS = 4
+SALVAGE_MAX_RADIUS = 12

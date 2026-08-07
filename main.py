@@ -12,8 +12,10 @@ from world.starfield import Starfield
 from world.hub_manager import HubManager
 from world.sector_manager import SectorManager
 from world.asteroid_manager import AsteroidManager
+from world.salvage_manager import SalvageManager
 
 from ui.hud import HUD
+from ui.inventory import InventoryScreen
 
 
 pygame.init()
@@ -61,7 +63,13 @@ asteroid_manager = AsteroidManager(
     sector_manager
 )
 
+salvage_manager = SalvageManager()
+
 hud = HUD()
+
+inventory = InventoryScreen()
+
+show_inventory = False
 
 bullets = []
 
@@ -103,6 +111,13 @@ while running:
         if event.type == pygame.QUIT:
 
             running = False
+
+
+        if event.type == pygame.KEYDOWN:
+
+            if event.key == pygame.K_i:
+
+                show_inventory = not show_inventory
 
 
     # ==================================================
@@ -213,6 +228,23 @@ while running:
 
 
         # ----------------------------------------------
+        # Salvage: spawn drops from destroyed asteroids
+        # ----------------------------------------------
+
+        drops = asteroid_manager.pop_drops()
+
+        salvage_manager.spawn_from_drops(
+            drops
+        )
+
+        salvage_manager.update(dt)
+
+        salvage_manager.check_player_collision(
+            player
+        )
+
+
+        # ----------------------------------------------
         # Sector completion
         # ----------------------------------------------
 
@@ -296,6 +328,11 @@ while running:
         )
 
 
+        # New sector salvage
+
+        salvage_manager = SalvageManager()
+
+
         state = game_state.EXPLORING
 
 
@@ -333,6 +370,8 @@ while running:
                 player,
                 sector_manager
             )
+
+            salvage_manager = SalvageManager()
 
             state = game_state.EXPLORING
 
@@ -396,6 +435,14 @@ while running:
         # Asteroids
 
         asteroid_manager.draw(
+            screen,
+            camera
+        )
+
+
+        # Salvage
+
+        salvage_manager.draw(
             screen,
             camera
         )
@@ -490,6 +537,20 @@ while running:
         screen.blit(
             text,
             (160, 280)
+        )
+
+
+    # ----------------------------------------------------
+    # Inventory overlay (drawn on top of everything)
+    # ----------------------------------------------------
+
+    if show_inventory:
+
+        inventory.draw(
+            screen,
+            credits=player.credits,
+            screen_width=WIDTH,
+            screen_height=HEIGHT,
         )
 
 
