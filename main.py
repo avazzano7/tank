@@ -1,4 +1,5 @@
 import sys
+
 import pygame
 
 from core.settings import *
@@ -10,6 +11,7 @@ from entities.bullet import Bullet
 from world.starfield import Starfield
 from world.hub_manager import HubManager
 from world.sector_manager import SectorManager
+from world.asteroid_manager import AsteroidManager
 
 from ui.hud import HUD
 
@@ -17,9 +19,9 @@ from ui.hud import HUD
 pygame.init()
 
 
-# --------------------------------------------------
-# Display
-# --------------------------------------------------
+# ==================================================
+# DISPLAY
+# ==================================================
 
 screen = pygame.display.set_mode(
     (WIDTH, HEIGHT)
@@ -32,9 +34,9 @@ pygame.display.set_caption(
 clock = pygame.time.Clock()
 
 
-# --------------------------------------------------
-# Game Objects
-# --------------------------------------------------
+# ==================================================
+# GAME OBJECTS
+# ==================================================
 
 player = Player(
     0,
@@ -57,9 +59,19 @@ hud = HUD()
 bullets = []
 
 
-# --------------------------------------------------
-# Temporary Font
-# --------------------------------------------------
+# ==================================================
+# ASTEROID MANAGER
+# ==================================================
+
+asteroid_manager = AsteroidManager(
+    player,
+    sector_manager.radius
+)
+
+
+# ==================================================
+# TEMPORARY FONT
+# ==================================================
 
 font = pygame.font.SysFont(
     None,
@@ -67,16 +79,16 @@ font = pygame.font.SysFont(
 )
 
 
-# --------------------------------------------------
-# Game State
-# --------------------------------------------------
+# ==================================================
+# GAME STATE
+# ==================================================
 
 state = game_state.EXPLORING
 
 
-# --------------------------------------------------
-# Main Loop
-# --------------------------------------------------
+# ==================================================
+# MAIN LOOP
+# ==================================================
 
 running = True
 
@@ -163,6 +175,36 @@ while running:
 
 
         # ----------------------------------------------
+        # Asteroids
+        # ----------------------------------------------
+
+        asteroid_manager.update()
+
+
+        # ----------------------------------------------
+        # Bullet Collisions
+        # ----------------------------------------------
+
+        remaining_bullets = []
+
+        for bullet in bullets:
+
+            if asteroid_manager.check_bullet_collision(
+                bullet
+            ):
+
+                continue
+
+
+            remaining_bullets.append(
+                bullet
+            )
+
+
+        bullets = remaining_bullets
+
+
+        # ----------------------------------------------
         # Sector Boundary
         # ----------------------------------------------
 
@@ -174,7 +216,7 @@ while running:
 
 
         # ----------------------------------------------
-        # Bullets
+        # Bullet Updates
         # ----------------------------------------------
 
         active_bullets = []
@@ -190,6 +232,13 @@ while running:
         bullets = active_bullets
 
 
+        # ----------------------------------------------
+        # Maintain Asteroid Population
+        # ----------------------------------------------
+
+        asteroid_manager.maintain_population()
+
+
     # ==================================================
     # BOSS
     # ==================================================
@@ -198,7 +247,6 @@ while running:
 
         keys = pygame.key.get_pressed()
 
-        # Temporary boss victory
         if keys[pygame.K_SPACE]:
 
             state = game_state.TRANSITION
@@ -225,6 +273,11 @@ while running:
         bullets.clear()
 
         hub_manager = HubManager()
+
+        asteroid_manager = AsteroidManager(
+            player,
+            sector_manager.radius
+        )
 
         state = game_state.EXPLORING
 
@@ -258,20 +311,22 @@ while running:
     screen.fill(BLACK)
 
 
-    # --------------------------------------------------
-    # Exploration
-    # --------------------------------------------------
-
     if state == game_state.EXPLORING:
 
-        # Background
+        # --------------------------------------------------
+        # Starfield
+        # --------------------------------------------------
+
         stars.draw(
             screen,
             camera
         )
 
 
-        # Sector boundary
+        # --------------------------------------------------
+        # Sector Boundary
+        # --------------------------------------------------
+
         pygame.draw.circle(
             screen,
             (80, 80, 80),
@@ -281,14 +336,30 @@ while running:
         )
 
 
+        # --------------------------------------------------
         # Hubs
+        # --------------------------------------------------
+
         hub_manager.draw(
             screen,
             camera
         )
 
 
+        # --------------------------------------------------
+        # Asteroids
+        # --------------------------------------------------
+
+        asteroid_manager.draw(
+            screen,
+            camera
+        )
+
+
+        # --------------------------------------------------
         # Bullets
+        # --------------------------------------------------
+
         for bullet in bullets:
 
             bullet.draw(
@@ -297,7 +368,10 @@ while running:
             )
 
 
+        # --------------------------------------------------
         # Player
+        # --------------------------------------------------
+
         player.draw(
             screen,
             camera
@@ -305,7 +379,7 @@ while running:
 
 
         # --------------------------------------------------
-        # Navigation Data
+        # Navigation
         # --------------------------------------------------
 
         nearest_hub, hub_distance = (
@@ -338,10 +412,6 @@ while running:
         )
 
 
-    # --------------------------------------------------
-    # Boss
-    # --------------------------------------------------
-
     elif state == game_state.BOSS:
 
         text = font.render(
@@ -355,10 +425,6 @@ while running:
             (240, 280)
         )
 
-
-    # --------------------------------------------------
-    # Transition
-    # --------------------------------------------------
 
     elif state == game_state.TRANSITION:
 
@@ -374,16 +440,12 @@ while running:
         )
 
 
-    # --------------------------------------------------
-    # Display
-    # --------------------------------------------------
-
     pygame.display.flip()
 
 
-# --------------------------------------------------
-# Shutdown
-# --------------------------------------------------
+# ==================================================
+# SHUTDOWN
+# ==================================================
 
 pygame.quit()
 

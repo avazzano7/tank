@@ -1,20 +1,20 @@
 Phase 1 - Foundation
-- ship movement
-- camera
-- starfield
-- home station
-- random outpost stations
-- compass
-- HUD foundation
-- sector system
+- ship movement (done)
+- camera (done)
+- starfield (done)
+- home station (done)
+- random outpost stations (done)
+- compass (done)
+- HUD foundation (done)
+- sector system (done)
 
 Phase 2 - Combat
-- weapon system
-- bullets
-- asteroids
-- procedural asteroid shapes
-- collision detection
-- asteroid splitting
+- weapon system (done)
+- bullets (done)
+- asteroids (done)
+- procedural asteroid shapes (done)
+- collision detection (done)
+- asteroid splitting (done)
 - ship health
 - explosion effects
 
