@@ -1,6 +1,8 @@
 import math
 import pygame
 
+from core.settings import TECHNO_GREEN
+
 
 class Compass:
 
@@ -40,13 +42,13 @@ class Compass:
 
         pygame.draw.polygon(
             screen,
-            (255, 255, 255),
+            TECHNO_GREEN,
             points,
             2,
         )
         pygame.draw.circle(
             screen,
-            (255, 255, 255),
+            TECHNO_GREEN,
             center,
             self.size + 4,
             2,

@@ -327,6 +327,44 @@ class AsteroidManager:
 
 
     # ======================================================
+    # PLAYER COLLISION
+    # ======================================================
+
+    def check_player_collision(
+        self,
+        player,
+    ):
+
+        if not player.is_alive():
+
+            return
+
+        if player.is_invulnerable():
+
+            return
+
+
+        for asteroid in self.asteroids:
+
+            distance = (
+                player.position -
+                asteroid.position
+            ).length()
+
+
+            if distance <= (
+                asteroid.radius
+                + player.radius
+            ):
+
+                player.take_damage(
+                    asteroid.contact_damage
+                )
+
+                return
+
+
+    # ======================================================
     # MAINTAIN POPULATION
     # ======================================================
 

@@ -15,8 +15,7 @@ Phase 2 - Combat
 - procedural asteroid shapes (done)
 - collision detection (done)
 - asteroid splitting (done)
-- ship health
-- explosion effects
+- ship health (done)
 
 Phase 3 - Salvage
 - scrap drops
@@ -74,7 +73,7 @@ Phase 9 - Random Events
 - hidden loot
 
 Phase 10 - Polish (this can be intermixed into other Phases)
-- better explosions
+- explosion effects
 - engine trails
 - screen shake
 - better sounds

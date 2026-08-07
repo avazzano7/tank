@@ -1,6 +1,12 @@
 import pygame
 import math
 
+from core.settings import (
+    PLAYER_MAX_HEALTH,
+    PLAYER_COLLISION_RADIUS,
+    PLAYER_INVULNERABILITY_DURATION,
+)
+
 
 class Player:
 
@@ -22,6 +28,14 @@ class Player:
         # Weapon
         self.bullet_interval = 0.25
         self.bullet_timer = 0.0
+
+        # Health / collision
+        self.max_health = PLAYER_MAX_HEALTH
+        self.health = self.max_health
+
+        self.radius = PLAYER_COLLISION_RADIUS
+
+        self.invulnerable_timer = 0.0
 
     def get_forward_direction(self):
 
@@ -45,6 +59,15 @@ class Player:
         # Weapon timer
         self.bullet_timer -= dt
 
+        # Invulnerability timer
+        if self.invulnerable_timer > 0:
+
+            self.invulnerable_timer -= dt
+
+            if self.invulnerable_timer < 0:
+
+                self.invulnerable_timer = 0
+
         # Limit speed
         if self.velocity.length() > self.max_speed:
 
@@ -66,7 +89,54 @@ class Player:
 
         self.bullet_timer = self.bullet_interval
 
+    # ------------------------------------------------------
+    # Health
+    # ------------------------------------------------------
+
+    def is_invulnerable(self):
+
+        return self.invulnerable_timer > 0
+
+    def take_damage(self, amount):
+
+        if self.is_invulnerable():
+
+            return False
+
+        self.health -= amount
+
+        if self.health < 0:
+
+            self.health = 0
+
+        self.invulnerable_timer = (
+            PLAYER_INVULNERABILITY_DURATION
+        )
+
+        return self.health <= 0
+
+    def is_alive(self):
+
+        return self.health > 0
+
+    def reset_health(self):
+
+        self.health = self.max_health
+
+        self.invulnerable_timer = 0.0
+
     def draw(self, screen, camera):
+
+        # Flicker while invulnerable
+        if self.is_invulnerable():
+
+            flicker_on = (
+                int(self.invulnerable_timer * 10) % 2 == 0
+            )
+
+            if not flicker_on:
+
+                return
 
         screen_position = (
             self.position - camera

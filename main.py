@@ -179,6 +179,19 @@ while running:
 
 
         # ----------------------------------------------
+        # Player / asteroid collision
+        # ----------------------------------------------
+
+        asteroid_manager.check_player_collision(
+            player
+        )
+
+        if not player.is_alive():
+
+            state = game_state.GAME_OVER
+
+
+        # ----------------------------------------------
         # Bullet collisions
         # ----------------------------------------------
 
@@ -284,6 +297,44 @@ while running:
 
 
         state = game_state.EXPLORING
+
+
+    # ==================================================
+    # GAME OVER
+    # ==================================================
+
+    elif state == game_state.GAME_OVER:
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_r]:
+
+            sector_manager.load_sector(1)
+
+            player.position = pygame.Vector2(
+                0,
+                0
+            )
+
+            player.velocity = pygame.Vector2(
+                0,
+                0
+            )
+
+            player.reset_health()
+
+            bullets.clear()
+
+            hub_manager = HubManager(
+                sector_manager
+            )
+
+            asteroid_manager = AsteroidManager(
+                player,
+                sector_manager
+            )
+
+            state = game_state.EXPLORING
 
 
     # ==================================================
@@ -395,6 +446,8 @@ while running:
             nearest_hub_distance=hub_distance,
             player_position=player.position,
             nearest_hub_position=nearest_hub.position,
+            player_health=player.health,
+            player_max_health=player.max_health,
         )
 
 
@@ -423,6 +476,20 @@ while running:
         screen.blit(
             text,
             (220, 280)
+        )
+
+
+    elif state == game_state.GAME_OVER:
+
+        text = font.render(
+            "SHIP DESTROYED - PRESS R TO RESTART",
+            True,
+            WHITE,
+        )
+
+        screen.blit(
+            text,
+            (160, 280)
         )
 
 

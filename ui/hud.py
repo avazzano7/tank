@@ -1,5 +1,11 @@
 import pygame
 
+from core.settings import (
+    TECHNO_GREEN,
+    TECHNO_GREEN_DIM,
+    TECHNO_GREEN_DARK,
+)
+
 from ui.widgets.progress_bar import ProgressBar
 from ui.widgets.compass import Compass
 
@@ -14,6 +20,17 @@ class HUD:
         self.progress_bar = ProgressBar(
             width=220,
             height=18,
+            fill_color=TECHNO_GREEN,
+            border_color=TECHNO_GREEN_DIM,
+            background_color=TECHNO_GREEN_DARK,
+        )
+
+        self.health_bar = ProgressBar(
+            width=220,
+            height=18,
+            fill_color=TECHNO_GREEN,
+            border_color=TECHNO_GREEN_DIM,
+            background_color=TECHNO_GREEN_DARK,
         )
 
         self.compass = Compass()
@@ -29,6 +46,8 @@ class HUD:
         nearest_hub_distance,
         player_position,
         nearest_hub_position,
+        player_health,
+        player_max_health,
     ):
 
         x = 20
@@ -37,7 +56,7 @@ class HUD:
         title = self.font_large.render(
             f"SECTOR {sector}",
             True,
-            (255, 255, 255),
+            TECHNO_GREEN,
         )
 
         screen.blit(title, (x, y))
@@ -48,7 +67,7 @@ class HUD:
             self.font_small.render(
                 "Progress",
                 True,
-                (220, 220, 220),
+                TECHNO_GREEN_DIM,
             ),
             (x, y),
         )
@@ -68,7 +87,7 @@ class HUD:
             self.font_small.render(
                 f"Home: {int(distance_from_home):,} km",
                 True,
-                (255, 255, 255),
+                TECHNO_GREEN,
             ),
             (x, y),
         )
@@ -79,7 +98,7 @@ class HUD:
             self.font_small.render(
                 nearest_hub_name,
                 True,
-                (255, 255, 255),
+                TECHNO_GREEN,
             ),
             (x, y),
         )
@@ -90,7 +109,7 @@ class HUD:
             self.font_small.render(
                 f"{int(nearest_hub_distance):,} km",
                 True,
-                (200, 200, 200),
+                TECHNO_GREEN_DIM,
             ),
             (x, y),
         )
@@ -100,4 +119,37 @@ class HUD:
             pygame.Vector2(x + 100, y),
             player_position,
             nearest_hub_position,
+        )
+
+        y += 50
+
+        screen.blit(
+            self.font_small.render(
+                "Hull",
+                True,
+                TECHNO_GREEN_DIM,
+            ),
+            (x, y),
+        )
+
+        health_percent = (
+            player_health / player_max_health
+        )
+
+        self.health_bar.draw(
+            screen,
+            x,
+            y + 24,
+            health_percent,
+        )
+
+        y += 60
+
+        screen.blit(
+            self.font_small.render(
+                f"{int(player_health)} / {int(player_max_health)}",
+                True,
+                TECHNO_GREEN,
+            ),
+            (x, y),
         )
