@@ -50,23 +50,20 @@ camera = pygame.Vector2(
 
 stars = Starfield()
 
-hub_manager = HubManager()
-
 sector_manager = SectorManager()
+
+hub_manager = HubManager(
+    sector_manager
+)
+
+asteroid_manager = AsteroidManager(
+    player,
+    sector_manager
+)
 
 hud = HUD()
 
 bullets = []
-
-
-# ==================================================
-# ASTEROID MANAGER
-# ==================================================
-
-asteroid_manager = AsteroidManager(
-    player,
-    sector_manager.radius
-)
 
 
 # ==================================================
@@ -132,7 +129,7 @@ while running:
 
 
         # ----------------------------------------------
-        # Forward Movement
+        # Thrust
         # ----------------------------------------------
 
         if keys[pygame.K_w]:
@@ -141,26 +138,26 @@ while running:
 
 
         # ----------------------------------------------
-        # Firing
+        # Fire
         # ----------------------------------------------
 
         if keys[pygame.K_SPACE]:
 
             if player.can_fire():
 
-                bullet_direction = (
+                direction = (
                     player.get_forward_direction()
                 )
 
                 bullet_position = (
                     player.position
-                    + bullet_direction * 20
+                    + direction * 20
                 )
 
                 bullets.append(
                     Bullet(
                         bullet_position,
-                        bullet_direction
+                        direction
                     )
                 )
 
@@ -182,7 +179,7 @@ while running:
 
 
         # ----------------------------------------------
-        # Bullet Collisions
+        # Bullet collisions
         # ----------------------------------------------
 
         remaining_bullets = []
@@ -195,17 +192,15 @@ while running:
 
                 continue
 
-
             remaining_bullets.append(
                 bullet
             )
-
 
         bullets = remaining_bullets
 
 
         # ----------------------------------------------
-        # Sector Boundary
+        # Sector completion
         # ----------------------------------------------
 
         if sector_manager.check_sector_completion(
@@ -216,7 +211,7 @@ while running:
 
 
         # ----------------------------------------------
-        # Bullet Updates
+        # Bullets
         # ----------------------------------------------
 
         active_bullets = []
@@ -233,7 +228,7 @@ while running:
 
 
         # ----------------------------------------------
-        # Maintain Asteroid Population
+        # Maintain asteroid population
         # ----------------------------------------------
 
         asteroid_manager.maintain_population()
@@ -272,12 +267,21 @@ while running:
 
         bullets.clear()
 
-        hub_manager = HubManager()
+
+        # New sector hubs
+
+        hub_manager = HubManager(
+            sector_manager
+        )
+
+
+        # New sector asteroid configuration
 
         asteroid_manager = AsteroidManager(
             player,
-            sector_manager.radius
+            sector_manager
         )
+
 
         state = game_state.EXPLORING
 
@@ -313,19 +317,13 @@ while running:
 
     if state == game_state.EXPLORING:
 
-        # --------------------------------------------------
-        # Starfield
-        # --------------------------------------------------
-
         stars.draw(
             screen,
             camera
         )
 
 
-        # --------------------------------------------------
-        # Sector Boundary
-        # --------------------------------------------------
+        # Sector boundary
 
         pygame.draw.circle(
             screen,
@@ -336,9 +334,7 @@ while running:
         )
 
 
-        # --------------------------------------------------
         # Hubs
-        # --------------------------------------------------
 
         hub_manager.draw(
             screen,
@@ -346,9 +342,7 @@ while running:
         )
 
 
-        # --------------------------------------------------
         # Asteroids
-        # --------------------------------------------------
 
         asteroid_manager.draw(
             screen,
@@ -356,9 +350,7 @@ while running:
         )
 
 
-        # --------------------------------------------------
         # Bullets
-        # --------------------------------------------------
 
         for bullet in bullets:
 
@@ -368,9 +360,7 @@ while running:
             )
 
 
-        # --------------------------------------------------
         # Player
-        # --------------------------------------------------
 
         player.draw(
             screen,
@@ -378,9 +368,7 @@ while running:
         )
 
 
-        # --------------------------------------------------
         # Navigation
-        # --------------------------------------------------
 
         nearest_hub, hub_distance = (
             hub_manager.get_nearest_hub(
@@ -396,9 +384,7 @@ while running:
         )
 
 
-        # --------------------------------------------------
         # HUD
-        # --------------------------------------------------
 
         hud.draw(
             screen,

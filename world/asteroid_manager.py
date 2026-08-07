@@ -4,6 +4,7 @@ import random
 import pygame
 
 from entities.asteroid import Asteroid
+from entities.bullet import Bullet
 
 
 class AsteroidManager:
@@ -11,36 +12,52 @@ class AsteroidManager:
     def __init__(
         self,
         player,
-        sector_radius,
+        sector_manager,
     ):
 
         self.player = player
-        self.sector_radius = sector_radius
+
+        self.sector_manager = sector_manager
 
         self.asteroids = []
 
         # --------------------------------------------------
-        # Sector Asteroid Configuration
+        # Read current sector configuration
         # --------------------------------------------------
 
-        self.max_asteroids = 30
-
-        self.min_spawn_distance = 500
-
-        self.edge_margin = 150
-
-        # Probability of each initial asteroid size
-        self.size_weights = {
-            "large": 0.60,
-            "medium": 0.30,
-            "small": 0.10,
-        }
+        self.update_sector_configuration()
 
         # --------------------------------------------------
-        # Initial Population
+        # Populate sector
         # --------------------------------------------------
 
         self.populate()
+
+
+    # ======================================================
+    # SECTOR CONFIGURATION
+    # ======================================================
+
+    def update_sector_configuration(self):
+
+        self.sector_radius = (
+            self.sector_manager.radius
+        )
+
+        self.max_asteroids = (
+            self.sector_manager.max_asteroids
+        )
+
+        self.size_weights = (
+            self.sector_manager
+            .asteroid_size_weights
+        )
+
+        # Don't spawn directly around the player.
+        self.min_spawn_distance = 500
+
+        # Keep asteroids slightly inside the boundary.
+        self.edge_margin = 150
 
 
     # ======================================================
@@ -49,9 +66,21 @@ class AsteroidManager:
 
     def populate(self):
 
-        while len(self.asteroids) < self.max_asteroids:
+        attempts = 0
 
-            asteroid = self.create_random_asteroid()
+        max_attempts = (
+            self.max_asteroids * 10
+        )
+
+        while (
+            len(self.asteroids)
+            < self.max_asteroids
+            and attempts < max_attempts
+        ):
+
+            asteroid = (
+                self.create_random_asteroid()
+            )
 
             if asteroid is not None:
 
@@ -59,14 +88,18 @@ class AsteroidManager:
                     asteroid
                 )
 
+            attempts += 1
+
 
     # ======================================================
-    # CREATE ASTEROID
+    # CREATE RANDOM ASTEROID
     # ======================================================
 
     def create_random_asteroid(self):
 
-        position = self.get_random_position()
+        position = (
+            self.get_random_position()
+        )
 
         if position is None:
 
@@ -74,16 +107,19 @@ class AsteroidManager:
 
 
         size = random.choices(
+
             population=[
                 "large",
                 "medium",
                 "small",
             ],
+
             weights=[
                 self.size_weights["large"],
                 self.size_weights["medium"],
                 self.size_weights["small"],
             ],
+
             k=1,
         )[0]
 
@@ -100,6 +136,19 @@ class AsteroidManager:
 
     def get_random_position(self):
 
+        max_distance = (
+            self.sector_radius
+            - self.edge_margin
+        )
+
+        if (
+            max_distance
+            <= self.min_spawn_distance
+        ):
+
+            return None
+
+
         for _ in range(50):
 
             angle = random.uniform(
@@ -107,22 +156,10 @@ class AsteroidManager:
                 math.pi * 2
             )
 
-            # Leave room around the outer edge.
-            max_distance = (
-                self.sector_radius
-                - self.edge_margin
-            )
-
-            if max_distance <= self.min_spawn_distance:
-
-                return None
-
-
             distance = random.uniform(
                 self.min_spawn_distance,
                 max_distance
             )
-
 
             position = (
                 pygame.Vector2(
@@ -133,8 +170,6 @@ class AsteroidManager:
             )
 
 
-            # Make sure the asteroid isn't too close
-            # to another asteroid.
             if self.is_position_clear(
                 position
             ):
@@ -155,7 +190,8 @@ class AsteroidManager:
         minimum_distance=150,
     ):
 
-        # Don't spawn too close to the player.
+        # Don't spawn directly on player.
+
         if (
             position.distance_to(
                 self.player.position
@@ -166,7 +202,8 @@ class AsteroidManager:
             return False
 
 
-        # Don't overlap another asteroid.
+        # Don't stack asteroids on top of each other.
+
         for asteroid in self.asteroids:
 
             if (
@@ -194,7 +231,7 @@ class AsteroidManager:
 
 
     # ======================================================
-    # DAMAGE
+    # DAMAGE ASTEROID
     # ======================================================
 
     def damage_asteroid(
@@ -203,8 +240,10 @@ class AsteroidManager:
         damage,
     ):
 
-        destroyed = asteroid.take_damage(
-            damage
+        destroyed = (
+            asteroid.take_damage(
+                damage
+            )
         )
 
 
@@ -231,8 +270,9 @@ class AsteroidManager:
                     split_size
                 )
 
-                # Give the children some of the parent's
+                # Give children some of the parent's
                 # momentum.
+
                 child.velocity += (
                     asteroid.velocity * 0.5
                 )
@@ -242,7 +282,9 @@ class AsteroidManager:
                 )
 
 
-        # Remove destroyed asteroid.
+        # ----------------------------------------------
+        # Remove destroyed asteroid
+        # ----------------------------------------------
 
         if asteroid in self.asteroids:
 
@@ -252,7 +294,7 @@ class AsteroidManager:
 
 
     # ======================================================
-    # BULLET COLLISIONS
+    # BULLET COLLISION
     # ======================================================
 
     def check_bullet_collision(
@@ -269,8 +311,8 @@ class AsteroidManager:
 
 
             if distance <= (
-                asteroid.radius +
-                bullet.RADIUS
+                asteroid.radius
+                + Bullet.RADIUS
             ):
 
                 self.damage_asteroid(
@@ -290,9 +332,17 @@ class AsteroidManager:
 
     def maintain_population(self):
 
-        while len(self.asteroids) < self.max_asteroids:
+        attempts = 0
 
-            asteroid = self.create_random_asteroid()
+        while (
+            len(self.asteroids)
+            < self.max_asteroids
+            and attempts < 10
+        ):
+
+            asteroid = (
+                self.create_random_asteroid()
+            )
 
             if asteroid is not None:
 
@@ -300,9 +350,7 @@ class AsteroidManager:
                     asteroid
                 )
 
-            else:
-
-                break
+            attempts += 1
 
 
     # ======================================================
