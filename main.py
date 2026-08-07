@@ -5,6 +5,7 @@ from core.settings import *
 import core.game_state as game_state
 
 from entities.player import Player
+from entities.bullet import Bullet
 
 from world.starfield import Starfield
 from world.hub_manager import HubManager
@@ -15,8 +16,18 @@ from ui.hud import HUD
 
 pygame.init()
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Asteroids: The Ascent")
+
+# --------------------------------------------------
+# Display
+# --------------------------------------------------
+
+screen = pygame.display.set_mode(
+    (WIDTH, HEIGHT)
+)
+
+pygame.display.set_caption(
+    "Asteroids: The Ascent"
+)
 
 clock = pygame.time.Clock()
 
@@ -25,9 +36,15 @@ clock = pygame.time.Clock()
 # Game Objects
 # --------------------------------------------------
 
-player = Player(0, 0)
+player = Player(
+    0,
+    0
+)
 
-camera = pygame.Vector2(0, 0)
+camera = pygame.Vector2(
+    0,
+    0
+)
 
 stars = Starfield()
 
@@ -37,7 +54,22 @@ sector_manager = SectorManager()
 
 hud = HUD()
 
-font = pygame.font.SysFont(None, 30)
+bullets = []
+
+
+# --------------------------------------------------
+# Temporary Font
+# --------------------------------------------------
+
+font = pygame.font.SysFont(
+    None,
+    30
+)
+
+
+# --------------------------------------------------
+# Game State
+# --------------------------------------------------
 
 state = game_state.EXPLORING
 
@@ -50,37 +82,117 @@ running = True
 
 while running:
 
-    clock.tick(FPS)
+    dt = clock.tick(FPS) / 1000.0
 
-    # ----------------------------
-    # Events
-    # ----------------------------
+
+    # ==================================================
+    # EVENTS
+    # ==================================================
 
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
+
             running = False
 
-    # ----------------------------
-    # Game State Updates
-    # ----------------------------
+
+    # ==================================================
+    # EXPLORING
+    # ==================================================
 
     if state == game_state.EXPLORING:
 
         keys = pygame.key.get_pressed()
 
+
+        # ----------------------------------------------
+        # Rotation
+        # ----------------------------------------------
+
         if keys[pygame.K_a]:
+
             player.rotate(-1)
 
+
         if keys[pygame.K_d]:
+
             player.rotate(1)
 
+
+        # ----------------------------------------------
+        # Forward Movement
+        # ----------------------------------------------
+
         if keys[pygame.K_w]:
+
             player.thrust()
 
-        player.update()
 
-        if sector_manager.check_sector_completion(player.position):
+        # ----------------------------------------------
+        # Firing
+        # ----------------------------------------------
+
+        if keys[pygame.K_SPACE]:
+
+            if player.can_fire():
+
+                bullet_direction = (
+                    player.get_forward_direction()
+                )
+
+                bullet_position = (
+                    player.position
+                    + bullet_direction * 20
+                )
+
+                bullets.append(
+                    Bullet(
+                        bullet_position,
+                        bullet_direction
+                    )
+                )
+
+                player.fire()
+
+
+        # ----------------------------------------------
+        # Player
+        # ----------------------------------------------
+
+        player.update(dt)
+
+
+        # ----------------------------------------------
+        # Sector Boundary
+        # ----------------------------------------------
+
+        if sector_manager.check_sector_completion(
+            player.position
+        ):
+
             state = game_state.BOSS
+
+
+        # ----------------------------------------------
+        # Bullets
+        # ----------------------------------------------
+
+        active_bullets = []
+
+        for bullet in bullets:
+
+            if bullet.update(dt):
+
+                active_bullets.append(
+                    bullet
+                )
+
+        bullets = active_bullets
+
+
+    # ==================================================
+    # BOSS
+    # ==================================================
 
     elif state == game_state.BOSS:
 
@@ -88,39 +200,76 @@ while running:
 
         # Temporary boss victory
         if keys[pygame.K_SPACE]:
+
             state = game_state.TRANSITION
+
+
+    # ==================================================
+    # TRANSITION
+    # ==================================================
 
     elif state == game_state.TRANSITION:
 
         sector_manager.load_next_sector()
 
-        player.position = pygame.Vector2(0, 0)
-        player.velocity = pygame.Vector2(0, 0)
+        player.position = pygame.Vector2(
+            0,
+            0
+        )
+
+        player.velocity = pygame.Vector2(
+            0,
+            0
+        )
+
+        bullets.clear()
 
         hub_manager = HubManager()
 
         state = game_state.EXPLORING
 
-    # ----------------------------
-    # Camera
-    # ----------------------------
 
-    target_camera = (
+    # ==================================================
+    # CAMERA
+    # ==================================================
+
+    camera_target_position = (
         player.position
-        - pygame.Vector2(WIDTH // 2, HEIGHT // 2)
+        + player.velocity * 20
     )
 
-    camera += (target_camera - camera) * 0.05
+    target_camera = (
+        camera_target_position
+        - pygame.Vector2(
+            WIDTH // 2,
+            HEIGHT // 2
+        )
+    )
 
-    # ----------------------------
-    # Drawing
-    # ----------------------------
+    camera += (
+        target_camera - camera
+    ) * 0.12
+
+
+    # ==================================================
+    # DRAW
+    # ==================================================
 
     screen.fill(BLACK)
 
+
+    # --------------------------------------------------
+    # Exploration
+    # --------------------------------------------------
+
     if state == game_state.EXPLORING:
 
-        stars.draw(screen, camera)
+        # Background
+        stars.draw(
+            screen,
+            camera
+        )
+
 
         # Sector boundary
         pygame.draw.circle(
@@ -128,20 +277,54 @@ while running:
             (80, 80, 80),
             -camera,
             sector_manager.radius,
-            2,
+            2
         )
 
-        hub_manager.draw(screen, camera)
 
-        player.draw(screen, camera)
-
-        nearest_hub, hub_distance = hub_manager.get_nearest_hub(
-            player.position
+        # Hubs
+        hub_manager.draw(
+            screen,
+            camera
         )
 
-        distance, radius = sector_manager.get_progress(
-            player.position
+
+        # Bullets
+        for bullet in bullets:
+
+            bullet.draw(
+                screen,
+                camera
+            )
+
+
+        # Player
+        player.draw(
+            screen,
+            camera
         )
+
+
+        # --------------------------------------------------
+        # Navigation Data
+        # --------------------------------------------------
+
+        nearest_hub, hub_distance = (
+            hub_manager.get_nearest_hub(
+                player.position
+            )
+        )
+
+
+        distance, radius = (
+            sector_manager.get_progress(
+                player.position
+            )
+        )
+
+
+        # --------------------------------------------------
+        # HUD
+        # --------------------------------------------------
 
         hud.draw(
             screen,
@@ -154,6 +337,11 @@ while running:
             nearest_hub_position=nearest_hub.position,
         )
 
+
+    # --------------------------------------------------
+    # Boss
+    # --------------------------------------------------
+
     elif state == game_state.BOSS:
 
         text = font.render(
@@ -162,7 +350,15 @@ while running:
             WHITE,
         )
 
-        screen.blit(text, (240, 280))
+        screen.blit(
+            text,
+            (240, 280)
+        )
+
+
+    # --------------------------------------------------
+    # Transition
+    # --------------------------------------------------
 
     elif state == game_state.TRANSITION:
 
@@ -172,9 +368,23 @@ while running:
             WHITE,
         )
 
-        screen.blit(text, (220, 280))
+        screen.blit(
+            text,
+            (220, 280)
+        )
+
+
+    # --------------------------------------------------
+    # Display
+    # --------------------------------------------------
 
     pygame.display.flip()
 
+
+# --------------------------------------------------
+# Shutdown
+# --------------------------------------------------
+
 pygame.quit()
+
 sys.exit()
