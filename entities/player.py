@@ -42,6 +42,8 @@ class Player:
         # Progression
         self.credits = 0
 
+        self.parts = []
+
         self.thrust_channel = pygame.mixer.Channel(0)
 
     def get_forward_direction(self):
@@ -142,6 +144,10 @@ class Player:
     def add_credits(self, amount):
 
         self.credits += amount
+
+    def add_part(self, part_data):
+
+        self.parts.append(part_data)
 
     def draw(self, screen, camera):
 

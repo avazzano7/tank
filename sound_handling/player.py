@@ -2,7 +2,7 @@ import pygame
 
 # Load sound files (and set volume)
 fire_sound = pygame.mixer.Sound("assets/sounds/player/fire.wav")
-fire_sound.set_volume(1.0)
+fire_sound.set_volume(0.1)
 
 thrust_sound = pygame.mixer.Sound("assets/sounds/player/thrust.wav")
 thrust_sound.set_volume(1.0)

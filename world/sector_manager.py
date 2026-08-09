@@ -100,6 +100,22 @@ class SectorManager:
 
 
     @property
+    def part_drop_chance(self):
+
+        return self.config[
+            "part_drop_chance"
+        ]
+
+
+    @property
+    def part_rarity_weights(self):
+
+        return self.config[
+            "part_rarity_weights"
+        ]
+
+
+    @property
     def enemy_types(self):
 
         return self.config[

@@ -26,6 +26,8 @@ class AsteroidManager:
 
         self.pending_drops = []
 
+        self.pending_part_drops = []
+
         # --------------------------------------------------
         # Read current sector configuration
         # --------------------------------------------------
@@ -56,6 +58,16 @@ class AsteroidManager:
         self.size_weights = (
             self.sector_manager
             .asteroid_size_weights
+        )
+
+        self.part_drop_chance = (
+            self.sector_manager
+            .part_drop_chance
+        )
+
+        self.part_rarity_weights = (
+            self.sector_manager
+            .part_rarity_weights
         )
 
         # Don't spawn directly around the player.
@@ -260,7 +272,7 @@ class AsteroidManager:
 
 
         # ----------------------------------------------
-        # Record salvage drop
+        # Record salvage drop (guaranteed)
         # ----------------------------------------------
 
         salvage_value = random.randint(
@@ -276,6 +288,35 @@ class AsteroidManager:
                 "value": salvage_value,
             }
         )
+
+
+        # ----------------------------------------------
+        # Record ship part drop (chance-based)
+        # ----------------------------------------------
+
+        if random.random() < self.part_drop_chance:
+
+            rarity = random.choices(
+
+                population=list(
+                    self.part_rarity_weights.keys()
+                ),
+
+                weights=list(
+                    self.part_rarity_weights.values()
+                ),
+
+                k=1,
+            )[0]
+
+            self.pending_part_drops.append(
+                {
+                    "position": pygame.Vector2(
+                        asteroid.position
+                    ),
+                    "rarity": rarity,
+                }
+            )
 
 
         # ----------------------------------------------
@@ -328,6 +369,15 @@ class AsteroidManager:
         drops = self.pending_drops
 
         self.pending_drops = []
+
+        return drops
+
+
+    def pop_part_drops(self):
+
+        drops = self.pending_part_drops
+
+        self.pending_part_drops = []
 
         return drops
 

@@ -60,3 +60,15 @@ SALVAGE_MAX_RADIUS = 12
 
 # Distance from a hub within which the player can dock
 HUB_DOCKING_RANGE = 150
+
+# -----------------------------
+# Ship Parts
+# -----------------------------
+
+# Deliberately distinct from the green scrap/HUD theme so parts
+# read as a separate system at a glance, color-coded by rarity.
+PART_RARITY_COLORS = {
+    "common": (255, 210, 60),
+    "uncommon": (100, 200, 255),
+    "rare": (180, 100, 255),
+}

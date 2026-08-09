@@ -17,6 +17,7 @@ from world.hub_manager import HubManager
 from world.sector_manager import SectorManager
 from world.asteroid_manager import AsteroidManager
 from world.salvage_manager import SalvageManager
+from world.part_manager import PartManager
 
 from ui.hud import HUD
 from ui.inventory import InventoryScreen
@@ -71,6 +72,8 @@ asteroid_manager = AsteroidManager(
 
 salvage_manager = SalvageManager()
 
+part_manager = PartManager()
+
 hud = HUD()
 
 inventory = InventoryScreen()
@@ -114,7 +117,7 @@ state = game_state.EXPLORING
 # ==================================================
 
 main_music = pygame.mixer.music.load("assets/sounds/music/Dark Man Piano.mp3")
-pygame.mixer.music.set_volume(0.3)
+pygame.mixer.music.set_volume(0.2)
 pygame.mixer.music.play(-1)  # Loop indefinitely
 
 running = True
@@ -314,6 +317,27 @@ while running:
 
 
         # ----------------------------------------------
+        # Ship parts: spawn drops from destroyed asteroids
+        # ----------------------------------------------
+
+        part_drops = asteroid_manager.pop_part_drops()
+
+        part_manager.spawn_from_drops(
+            part_drops
+        )
+
+        part_manager.update(dt)
+
+        collected_parts = part_manager.check_player_collision(
+            player
+        )
+
+        if collected_parts:
+
+            part_pickup_sound.play()
+
+
+        # ----------------------------------------------
         # Sector completion
         # ----------------------------------------------
 
@@ -414,6 +438,11 @@ while running:
         salvage_manager = SalvageManager()
 
 
+        # New sector ship parts
+
+        part_manager = PartManager()
+
+
         state = game_state.EXPLORING
 
 
@@ -453,6 +482,8 @@ while running:
             )
 
             salvage_manager = SalvageManager()
+
+            part_manager = PartManager()
 
             state = game_state.EXPLORING
 
@@ -524,6 +555,14 @@ while running:
         # Salvage
 
         salvage_manager.draw(
+            screen,
+            camera
+        )
+
+
+        # Ship parts
+
+        part_manager.draw(
             screen,
             camera
         )
@@ -646,6 +685,7 @@ while running:
         inventory.draw(
             screen,
             credits=player.credits,
+            parts=player.parts,
             screen_width=WIDTH,
             screen_height=HEIGHT,
         )
