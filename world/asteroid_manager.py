@@ -406,7 +406,7 @@ class AsteroidManager:
 
                 self.damage_asteroid(
                     asteroid,
-                    10
+                    self.player.bullet_damage
                 )
 
                 asteroid_impact_sound.play()

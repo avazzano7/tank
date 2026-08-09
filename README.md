@@ -30,13 +30,11 @@ Phase 3 - Salvage
 - pickup radius (done)
 - inventory (done)
 - credits (done)
-- resource collection feedback
 
 Phase 4 - Stations
-- docking
+- docking (done)
 - repair
-- shop
-- upgrade menu
+- upgrade menu (done)
 - save game
 
 Phase 5 - Ship Evolution

@@ -9,6 +9,8 @@ from core.settings import (
 
 from sound_handling.player import fire_sound, thrust_sound
 
+from core.upgrades_config import UPGRADE_TRACKS
+
 
 class Player:
 
@@ -31,6 +33,8 @@ class Player:
         self.bullet_interval = 0.25
         self.bullet_timer = 0.0
 
+        self.bullet_damage = 10
+
         # Health / collision
         self.max_health = PLAYER_MAX_HEALTH
         self.health = self.max_health
@@ -43,6 +47,11 @@ class Player:
         self.credits = 0
 
         self.parts = []
+
+        self.upgrade_levels = {
+            key: 0
+            for key in UPGRADE_TRACKS
+        }
 
         self.thrust_channel = pygame.mixer.Channel(0)
 
@@ -148,6 +157,112 @@ class Player:
     def add_part(self, part_data):
 
         self.parts.append(part_data)
+
+
+    # ------------------------------------------------------
+    # Upgrades
+    # ------------------------------------------------------
+
+    def get_upgrade_summary(self):
+
+        summary = []
+
+        for key, track in UPGRADE_TRACKS.items():
+
+            level = self.upgrade_levels[key]
+
+            max_level = track["max_level"]
+
+            maxed = level >= max_level
+
+            cost = (
+                None
+                if maxed
+                else self._get_upgrade_cost(key, level)
+            )
+
+            summary.append(
+                {
+                    "key": key,
+                    "label": track["label"],
+                    "level": level,
+                    "max_level": max_level,
+                    "cost": cost,
+                    "maxed": maxed,
+                }
+            )
+
+        return summary
+
+    def _get_upgrade_value(self, track_key, level):
+
+        track = UPGRADE_TRACKS[track_key]
+
+        return (
+            track["base_value"]
+            * (track["value_multiplier"] ** level)
+        )
+
+    def _get_upgrade_cost(self, track_key, level):
+
+        track = UPGRADE_TRACKS[track_key]
+
+        return round(
+            track["base_cost"]
+            * (track["cost_multiplier"] ** level)
+        )
+
+    def purchase_upgrade(self, track_key):
+
+        track = UPGRADE_TRACKS.get(track_key)
+
+        if track is None:
+
+            return False
+
+        level = self.upgrade_levels[track_key]
+
+        if level >= track["max_level"]:
+
+            # Already maxed out.
+            return False
+
+        cost = self._get_upgrade_cost(
+            track_key,
+            level
+        )
+
+        if self.credits < cost:
+
+            return False
+
+        self.credits -= cost
+
+        # Value at the level we're upgrading INTO.
+        value = self._get_upgrade_value(
+            track_key,
+            level + 1
+        )
+
+        if track_key == "fire_rate":
+
+            self.bullet_interval = value
+
+        elif track_key == "bullet_damage":
+
+            self.bullet_damage = round(value)
+
+        elif track_key == "max_health":
+
+            increase = value - self.max_health
+
+            self.max_health = round(value)
+
+            self.health += increase
+
+        self.upgrade_levels[track_key] += 1
+
+        return True
 
     def draw(self, screen, camera):
 

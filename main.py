@@ -117,7 +117,7 @@ state = game_state.EXPLORING
 # ==================================================
 
 main_music = pygame.mixer.music.load("assets/sounds/music/Dark Man Piano.mp3")
-pygame.mixer.music.set_volume(0.2)
+pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)  # Loop indefinitely
 
 running = True
@@ -175,6 +175,27 @@ while running:
                     state = game_state.EXPLORING
 
                     docked_hub = None
+
+
+            if state == game_state.DOCKED:
+
+                purchase_keys = {
+                    pygame.K_1: 0,
+                    pygame.K_2: 1,
+                    pygame.K_3: 2,
+                }
+
+                if event.key in purchase_keys:
+
+                    index = purchase_keys[event.key]
+
+                    summary = player.get_upgrade_summary()
+
+                    if index < len(summary):
+
+                        player.purchase_upgrade(
+                            summary[index]["key"]
+                        )
 
 
     # ==================================================
@@ -328,13 +349,9 @@ while running:
 
         part_manager.update(dt)
 
-        collected_parts = part_manager.check_player_collision(
+        part_manager.check_player_collision(
             player
         )
-
-        if collected_parts:
-
-            part_pickup_sound.play()
 
 
         # ----------------------------------------------
@@ -629,6 +646,7 @@ while running:
             screen,
             hub_name=docked_hub.name,
             credits=player.credits,
+            upgrades=player.get_upgrade_summary(),
             screen_width=WIDTH,
             screen_height=HEIGHT,
         )

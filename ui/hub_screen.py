@@ -22,6 +22,7 @@ class HubScreen:
         *,
         hub_name,
         credits,
+        upgrades,
         screen_width,
         screen_height,
     ):
@@ -92,28 +93,55 @@ class HubScreen:
             (80, 165)
         )
 
-        upgrade_lines = [
-            "Fire Rate  (coming soon)",
-            "Bullet Damage  (coming soon)",
-            "Max Health  (coming soon)",
-        ]
+        y = 205
 
-        y = 210
+        for index, upgrade in enumerate(upgrades):
 
-        for line in upgrade_lines:
+            number = index + 1
 
-            line_text = self.font_small.render(
-                line,
+            if upgrade["maxed"]:
+
+                status = "MAXED"
+
+                affordable = False
+
+            else:
+
+                status = f"{upgrade['cost']}cr"
+
+                affordable = credits >= upgrade["cost"]
+
+            color = (
+                TECHNO_GREEN
+                if affordable
+                else TECHNO_GREEN_DIM
+            )
+
+            line = self.font_small.render(
+                f"[{number}] {upgrade['label']}  "
+                f"Lv {upgrade['level']}/{upgrade['max_level']}  "
+                f"{status}",
                 True,
-                TECHNO_GREEN_DIM,
+                color,
             )
 
             screen.blit(
-                line_text,
+                line,
                 (80, y)
             )
 
             y += 32
+
+        hint = self.font_small.render(
+            "Press 1/2/3 to buy",
+            True,
+            TECHNO_GREEN_DIM,
+        )
+
+        screen.blit(
+            hint,
+            (80, y + 10)
+        )
 
         # --------------------------------------------------
         # Advanced (ship parts) panel
