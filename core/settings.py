@@ -53,3 +53,10 @@ SALVAGE_MAX_VALUE = 25
 
 SALVAGE_MIN_RADIUS = 4
 SALVAGE_MAX_RADIUS = 12
+
+# -----------------------------
+# Docking
+# -----------------------------
+
+# Distance from a hub within which the player can dock
+HUB_DOCKING_RANGE = 150

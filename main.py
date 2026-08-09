@@ -2,6 +2,10 @@ import sys
 
 import pygame
 
+pygame.init()
+pygame.mixer.init()
+pygame.mixer.set_num_channels(32)
+
 from core.settings import *
 import core.game_state as game_state
 
@@ -16,9 +20,11 @@ from world.salvage_manager import SalvageManager
 
 from ui.hud import HUD
 from ui.inventory import InventoryScreen
+from ui.dock_prompt import DockPrompt
+from ui.hub_screen import HubScreen
 
-
-pygame.init()
+from sound_handling.ui import inventory_open_sound, inventory_close_sound
+from sound_handling.player import death_sound
 
 
 # ==================================================
@@ -69,7 +75,19 @@ hud = HUD()
 
 inventory = InventoryScreen()
 
+dock_prompt = DockPrompt()
+
+hub_screen = HubScreen()
+
 show_inventory = False
+
+# Nearest hub tracking, updated every EXPLORING frame
+nearest_hub = None
+hub_distance = float("inf")
+in_dock_range = False
+
+# The hub the player is currently docked at (None if not docked)
+docked_hub = None
 
 bullets = []
 
@@ -95,6 +113,10 @@ state = game_state.EXPLORING
 # MAIN LOOP
 # ==================================================
 
+main_music = pygame.mixer.music.load("assets/sounds/music/Dark Man Piano.mp3")
+pygame.mixer.music.set_volume(0.3)
+pygame.mixer.music.play(-1)  # Loop indefinitely
+
 running = True
 
 while running:
@@ -116,8 +138,40 @@ while running:
         if event.type == pygame.KEYDOWN:
 
             if event.key == pygame.K_i:
+                if show_inventory:
+                    inventory_close_sound.play()
+                    show_inventory = False
+                else:
+                    inventory_open_sound.play()
+                    show_inventory = True
 
-                show_inventory = not show_inventory
+
+            if event.key == pygame.K_e:
+
+                if (
+                    state == game_state.EXPLORING
+                    and in_dock_range
+                ):
+
+                    inventory_open_sound.play()
+
+                    state = game_state.DOCKED
+
+                    docked_hub = nearest_hub
+
+                    player.velocity = pygame.Vector2(
+                        0,
+                        0
+                    )
+
+
+                elif state == game_state.DOCKED:
+
+                    inventory_close_sound.play()
+
+                    state = game_state.EXPLORING
+
+                    docked_hub = None
 
 
     # ==================================================
@@ -187,6 +241,21 @@ while running:
 
 
         # ----------------------------------------------
+        # Hub proximity / docking check
+        # ----------------------------------------------
+
+        nearest_hub, hub_distance = (
+            hub_manager.get_nearest_hub(
+                player.position
+            )
+        )
+
+        in_dock_range = (
+            hub_distance <= HUB_DOCKING_RANGE
+        )
+
+
+        # ----------------------------------------------
         # Asteroids
         # ----------------------------------------------
 
@@ -202,7 +271,7 @@ while running:
         )
 
         if not player.is_alive():
-
+            death_sound.play()
             state = game_state.GAME_OVER
 
 
@@ -277,6 +346,18 @@ while running:
         # ----------------------------------------------
 
         asteroid_manager.maintain_population()
+
+
+    # ==================================================
+    # DOCKED
+    # ==================================================
+
+    elif state == game_state.DOCKED:
+
+        # World is frozen while docked.
+        # Undocking is handled in the event loop (K_e).
+
+        pass
 
 
     # ==================================================
@@ -468,13 +549,6 @@ while running:
 
         # Navigation
 
-        nearest_hub, hub_distance = (
-            hub_manager.get_nearest_hub(
-                player.position
-            )
-        )
-
-
         distance, radius = (
             sector_manager.get_progress(
                 player.position
@@ -495,6 +569,29 @@ while running:
             nearest_hub_position=nearest_hub.position,
             player_health=player.health,
             player_max_health=player.max_health,
+        )
+
+
+        # Dock prompt
+
+        if in_dock_range:
+
+            dock_prompt.draw(
+                screen,
+                nearest_hub.name,
+                WIDTH,
+                HEIGHT,
+            )
+
+
+    elif state == game_state.DOCKED:
+
+        hub_screen.draw(
+            screen,
+            hub_name=docked_hub.name,
+            credits=player.credits,
+            screen_width=WIDTH,
+            screen_height=HEIGHT,
         )
 
 

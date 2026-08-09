@@ -7,6 +7,8 @@ from core.settings import (
     PLAYER_INVULNERABILITY_DURATION,
 )
 
+from sound_handling.player import fire_sound, thrust_sound
+
 
 class Player:
 
@@ -40,6 +42,8 @@ class Player:
         # Progression
         self.credits = 0
 
+        self.thrust_channel = pygame.mixer.Channel(0)
+
     def get_forward_direction(self):
 
         return pygame.Vector2(
@@ -52,6 +56,9 @@ class Player:
         self.angle += amount * self.rotation_speed
 
     def thrust(self):
+
+        if not self.thrust_channel.get_busy():
+            self.thrust_channel.play(thrust_sound, loops=-1)
 
         direction = self.get_forward_direction()
 
@@ -89,7 +96,7 @@ class Player:
         return self.bullet_timer <= 0
 
     def fire(self):
-
+        fire_sound.play()
         self.bullet_timer = self.bullet_interval
 
     # ------------------------------------------------------

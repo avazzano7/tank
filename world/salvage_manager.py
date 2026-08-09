@@ -5,6 +5,8 @@ from core.settings import (
     SALVAGE_LIFETIME,
 )
 
+from sound_handling.salvage import salvage_pickup_sound
+
 
 class SalvageManager:
 
@@ -78,6 +80,8 @@ class SalvageManager:
                 player.add_credits(
                     pickup.value
                 )
+
+                salvage_pickup_sound.play()
 
             else:
 

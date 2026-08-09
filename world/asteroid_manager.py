@@ -6,6 +6,9 @@ import pygame
 from entities.asteroid import Asteroid
 from entities.bullet import Bullet
 
+from sound_handling.player import hit_sound
+from sound_handling.asteroid import asteroid_impact_sound, asteroid_destroy_sound
+
 
 class AsteroidManager:
 
@@ -253,6 +256,8 @@ class AsteroidManager:
 
             return
 
+        asteroid_destroy_sound.play()
+
 
         # ----------------------------------------------
         # Record salvage drop
@@ -354,6 +359,8 @@ class AsteroidManager:
                     10
                 )
 
+                asteroid_impact_sound.play()
+
                 return True
 
 
@@ -394,6 +401,8 @@ class AsteroidManager:
                 player.take_damage(
                     asteroid.contact_damage
                 )
+
+                hit_sound.play()
 
                 return
 

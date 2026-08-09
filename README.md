@@ -17,12 +17,19 @@ Phase 2 - Combat
 - asteroid splitting (done)
 - ship health (done)
 
+Phase 2.5 - Sound Effects
+- asteroid impact and destroy (done)
+- game (sector complete, sector arrived, etc.) (done)
+- salvage pickup (done)
+- player (fire, hit, death, thrust) (done)
+- ui (inventory open, close) (done)
+
 Phase 3 - Salvage
-- scrap drops
+- scrap drops (done)
 - rare part drops
-- pickup radius
-- inventory
-- credits
+- pickup radius (done)
+- inventory (done)
+- credits (done)
 - resource collection feedback
 
 Phase 4 - Stations

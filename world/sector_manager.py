@@ -2,6 +2,8 @@ import pygame
 
 from world.sector_config import SECTOR_CONFIGS
 
+from sound_handling.game import sector_arrived_sound
+
 
 class SectorManager:
 
@@ -34,6 +36,7 @@ class SectorManager:
         self.config = SECTOR_CONFIGS[
             sector_number
         ]
+        sector_arrived_sound.play()
 
 
     # ==================================================
