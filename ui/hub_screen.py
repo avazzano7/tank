@@ -4,6 +4,7 @@ from core.settings import (
     TECHNO_GREEN,
     TECHNO_GREEN_DIM,
     TECHNO_GREEN_DARK,
+    PART_RARITY_COLORS,
 )
 
 
@@ -23,6 +24,8 @@ class HubScreen:
         hub_name,
         credits,
         upgrades,
+        advanced,
+        part_counts,
         screen_width,
         screen_height,
     ):
@@ -133,14 +136,14 @@ class HubScreen:
             y += 32
 
         hint = self.font_small.render(
-            "Press 1/2/3 to buy",
+            "1/2/3 = Upgrades   4+ = Advanced",
             True,
             TECHNO_GREEN_DIM,
         )
 
         screen.blit(
             hint,
-            (80, y + 10)
+            (60, 420)
         )
 
         # --------------------------------------------------
@@ -175,27 +178,56 @@ class HubScreen:
             (420, 165)
         )
 
-        advanced_text = self.font_small.render(
-            "Requires Ship Parts",
-            True,
-            TECHNO_GREEN_DIM,
-        )
+        y = 205
 
-        screen.blit(
-            advanced_text,
-            (420, 210)
-        )
+        for index, entry in enumerate(advanced):
 
-        advanced_subtext = self.font_small.render(
-            "(coming soon)",
-            True,
-            TECHNO_GREEN_DIM,
-        )
+            number = len(upgrades) + index + 1
 
-        screen.blit(
-            advanced_subtext,
-            (420, 236)
-        )
+            currency = entry["currency"]
+
+            available = part_counts.get(
+                currency,
+                0,
+            )
+
+            currency_color = PART_RARITY_COLORS.get(
+                currency,
+                TECHNO_GREEN,
+            )
+
+            if entry["maxed"]:
+
+                status = "MAXED"
+
+                affordable = False
+
+            else:
+
+                status = f"{entry['cost']} {currency}"
+
+                affordable = available >= entry["cost"]
+
+            color = (
+                currency_color
+                if affordable
+                else TECHNO_GREEN_DIM
+            )
+
+            line = self.font_small.render(
+                f"[{number}] {entry['label']}  "
+                f"Lv {entry['level']}/{entry['max_level']}  "
+                f"{status}",
+                True,
+                color,
+            )
+
+            screen.blit(
+                line,
+                (420, y)
+            )
+
+            y += 32
 
         # --------------------------------------------------
         # Undock hint

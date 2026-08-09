@@ -111,17 +111,7 @@ class InventoryScreen:
             (panel_x + 20, panel_y + 100)
         )
 
-        counts = {
-            "common": 0,
-            "uncommon": 0,
-            "rare": 0,
-        }
-
-        for part in parts:
-
-            rarity = part.get("rarity", "common")
-
-            counts[rarity] = counts.get(rarity, 0) + 1
+        counts = parts
 
         y = panel_y + 130
 

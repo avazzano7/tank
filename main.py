@@ -11,6 +11,7 @@ import core.game_state as game_state
 
 from entities.player import Player
 from entities.bullet import Bullet
+from entities.missile import Missile
 
 from world.starfield import Starfield
 from world.hub_manager import HubManager
@@ -94,9 +95,7 @@ docked_hub = None
 
 bullets = []
 
-
-# ==================================================
-# TEMPORARY FONT
+missiles = []
 # ==================================================
 
 font = pygame.font.SysFont(
@@ -198,6 +197,25 @@ while running:
                         )
 
 
+                advanced_keys = {
+                    pygame.K_4: 0,
+                }
+
+                if event.key in advanced_keys:
+
+                    index = advanced_keys[event.key]
+
+                    advanced_summary = player.get_advanced_summary()
+
+                    if index < len(advanced_summary):
+
+                        entry_key = advanced_summary[index]["key"]
+
+                        if entry_key == "missiles":
+
+                            player.purchase_missile_upgrade()
+
+
     # ==================================================
     # EXPLORING
     # ==================================================
@@ -255,6 +273,35 @@ while running:
                 )
 
                 player.fire()
+
+
+        # ----------------------------------------------
+        # Fire missile
+        # ----------------------------------------------
+
+        if keys[pygame.K_q]:
+
+            if player.can_fire_missile():
+
+                direction = (
+                    player.get_forward_direction()
+                )
+
+                missile_position = (
+                    player.position
+                    + direction * 20
+                )
+
+                stats = player.fire_missile()
+
+                missiles.append(
+                    Missile(
+                        missile_position,
+                        direction,
+                        stats["damage"],
+                        stats["splash_radius"],
+                    )
+                )
 
 
         # ----------------------------------------------
@@ -321,6 +368,27 @@ while running:
 
 
         # ----------------------------------------------
+        # Missile collisions
+        # ----------------------------------------------
+
+        remaining_missiles = []
+
+        for missile in missiles:
+
+            if asteroid_manager.check_missile_collision(
+                missile
+            ):
+
+                continue
+
+            remaining_missiles.append(
+                missile
+            )
+
+        missiles = remaining_missiles
+
+
+        # ----------------------------------------------
         # Salvage: spawn drops from destroyed asteroids
         # ----------------------------------------------
 
@@ -383,6 +451,23 @@ while running:
 
 
         # ----------------------------------------------
+        # Missiles
+        # ----------------------------------------------
+
+        active_missiles = []
+
+        for missile in missiles:
+
+            if missile.update(dt):
+
+                active_missiles.append(
+                    missile
+                )
+
+        missiles = active_missiles
+
+
+        # ----------------------------------------------
         # Maintain asteroid population
         # ----------------------------------------------
 
@@ -434,8 +519,7 @@ while running:
 
         bullets.clear()
 
-
-        # New sector hubs
+        missiles.clear()
 
         hub_manager = HubManager(
             sector_manager
@@ -488,6 +572,8 @@ while running:
             player.reset_health()
 
             bullets.clear()
+
+            missiles.clear()
 
             hub_manager = HubManager(
                 sector_manager
@@ -595,6 +681,16 @@ while running:
             )
 
 
+        # Missiles
+
+        for missile in missiles:
+
+            missile.draw(
+                screen,
+                camera
+            )
+
+
         # Player
 
         player.draw(
@@ -647,6 +743,8 @@ while running:
             hub_name=docked_hub.name,
             credits=player.credits,
             upgrades=player.get_upgrade_summary(),
+            advanced=player.get_advanced_summary(),
+            part_counts=player.get_part_counts(),
             screen_width=WIDTH,
             screen_height=HEIGHT,
         )
@@ -703,7 +801,7 @@ while running:
         inventory.draw(
             screen,
             credits=player.credits,
-            parts=player.parts,
+            parts=player.get_part_counts(),
             screen_width=WIDTH,
             screen_height=HEIGHT,
         )

@@ -5,6 +5,7 @@ import pygame
 
 from entities.asteroid import Asteroid
 from entities.bullet import Bullet
+from entities.missile import Missile
 
 from sound_handling.player import hit_sound
 from sound_handling.asteroid import asteroid_impact_sound, asteroid_destroy_sound
@@ -415,6 +416,74 @@ class AsteroidManager:
 
 
         return False
+
+
+    # ======================================================
+    # MISSILE COLLISION
+    # ======================================================
+
+    def check_missile_collision(
+        self,
+        missile,
+    ):
+
+        for asteroid in self.asteroids:
+
+            distance = (
+                missile.position -
+                asteroid.position
+            ).length()
+
+
+            if distance <= (
+                asteroid.radius
+                + Missile.RADIUS
+            ):
+
+                self.apply_splash_damage(
+                    missile.position,
+                    missile.damage,
+                    missile.splash_radius,
+                )
+
+                return True
+
+
+        return False
+
+
+    def apply_splash_damage(
+        self,
+        position,
+        damage,
+        splash_radius,
+    ):
+
+        # Snapshot which asteroids are in range BEFORE dealing
+        # any damage, so splitting/removal during this explosion
+        # doesn't let newly-created fragments get caught too.
+
+        affected = [
+            asteroid
+            for asteroid in self.asteroids
+            if (
+                asteroid.position - position
+            ).length()
+            <= splash_radius + asteroid.radius
+        ]
+
+        for asteroid in affected:
+
+            if asteroid not in self.asteroids:
+
+                continue
+
+            self.damage_asteroid(
+                asteroid,
+                damage,
+            )
+
+            asteroid_impact_sound.play()
 
 
     # ======================================================

@@ -10,6 +10,7 @@ from core.settings import (
 from sound_handling.player import fire_sound, thrust_sound
 
 from core.upgrades_config import UPGRADE_TRACKS
+from core.missile_config import MISSILE_CONFIG
 
 
 class Player:
@@ -35,6 +36,8 @@ class Player:
 
         self.bullet_damage = 10
 
+        self.missile_timer = 0.0
+
         # Health / collision
         self.max_health = PLAYER_MAX_HEALTH
         self.health = self.max_health
@@ -52,6 +55,9 @@ class Player:
             key: 0
             for key in UPGRADE_TRACKS
         }
+
+        # 0 = locked, 1 = just unlocked, up to MISSILE_CONFIG["max_level"]
+        self.missile_level = 0
 
         self.thrust_channel = pygame.mixer.Channel(0)
 
@@ -79,6 +85,8 @@ class Player:
 
         # Weapon timer
         self.bullet_timer -= dt
+
+        self.missile_timer -= dt
 
         # Invulnerability timer
         if self.invulnerable_timer > 0:
@@ -109,6 +117,21 @@ class Player:
     def fire(self):
         fire_sound.play()
         self.bullet_timer = self.bullet_interval
+
+    def can_fire_missile(self):
+
+        return (
+            self.has_missiles()
+            and self.missile_timer <= 0
+        )
+
+    def fire_missile(self):
+
+        stats = self.get_missile_stats()
+
+        self.missile_timer = stats["cooldown"]
+
+        return stats
 
     # ------------------------------------------------------
     # Health
@@ -157,6 +180,143 @@ class Player:
     def add_part(self, part_data):
 
         self.parts.append(part_data)
+
+    def get_part_counts(self):
+
+        counts = {
+            "common": 0,
+            "uncommon": 0,
+            "rare": 0,
+        }
+
+        for part in self.parts:
+
+            rarity = part.get(
+                "rarity",
+                "common",
+            )
+
+            counts[rarity] = (
+                counts.get(rarity, 0) + 1
+            )
+
+        return counts
+
+    def _spend_parts(self, rarity, count):
+
+        spent = 0
+
+        remaining = []
+
+        for part in self.parts:
+
+            if (
+                part["rarity"] == rarity
+                and spent < count
+            ):
+
+                spent += 1
+
+                continue
+
+            remaining.append(part)
+
+        self.parts = remaining
+
+
+    # ------------------------------------------------------
+    # Missiles
+    # ------------------------------------------------------
+
+    def has_missiles(self):
+
+        return self.missile_level >= 1
+
+    def get_missile_stats(self, level=None):
+
+        if level is None:
+
+            level = self.missile_level
+
+        if level < 1:
+
+            return None
+
+        exponent = level - 1
+
+        return {
+            "damage": (
+                MISSILE_CONFIG["base_damage"]
+                * MISSILE_CONFIG["damage_multiplier"] ** exponent
+            ),
+            "splash_radius": (
+                MISSILE_CONFIG["base_splash_radius"]
+                * MISSILE_CONFIG["splash_radius_multiplier"] ** exponent
+            ),
+            "cooldown": (
+                MISSILE_CONFIG["base_cooldown"]
+                * MISSILE_CONFIG["cooldown_multiplier"] ** exponent
+            ),
+        }
+
+    def get_missile_upgrade_cost(self):
+
+        if self.missile_level >= MISSILE_CONFIG["max_level"]:
+
+            return None
+
+        if self.missile_level == 0:
+
+            return MISSILE_CONFIG["unlock_cost"]
+
+        exponent = self.missile_level - 1
+
+        return round(
+            MISSILE_CONFIG["upgrade_base_cost"]
+            * MISSILE_CONFIG["upgrade_cost_multiplier"] ** exponent
+        )
+
+    def purchase_missile_upgrade(self):
+
+        cost = self.get_missile_upgrade_cost()
+
+        if cost is None:
+
+            # Already maxed out.
+            return False
+
+        available = self.get_part_counts()["common"]
+
+        if available < cost:
+
+            return False
+
+        self._spend_parts("common", cost)
+
+        self.missile_level += 1
+
+        return True
+
+    def get_advanced_summary(self):
+
+        maxed = (
+            self.missile_level
+            >= MISSILE_CONFIG["max_level"]
+        )
+
+        cost = self.get_missile_upgrade_cost()
+
+        return [
+            {
+                "key": "missiles",
+                "label": "Missiles",
+                "level": self.missile_level,
+                "max_level": MISSILE_CONFIG["max_level"],
+                "cost": cost,
+                "maxed": maxed,
+                "currency": "common",
+            },
+        ]
 
 
     # ------------------------------------------------------

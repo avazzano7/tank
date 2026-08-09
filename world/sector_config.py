@@ -27,7 +27,7 @@ SECTOR_CONFIGS = {
         # Asteroids
         # ----------------------------------------------
 
-        "max_asteroids": 150,
+        "max_asteroids": 300,
 
         "asteroid_size_weights": {
             "large": 0.60,
@@ -88,7 +88,7 @@ SECTOR_CONFIGS = {
         # Asteroids
         # ----------------------------------------------
 
-        "max_asteroids": 250,
+        "max_asteroids": 500,
 
         "asteroid_size_weights": {
             "large": 0.45,
