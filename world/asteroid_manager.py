@@ -205,36 +205,22 @@ class AsteroidManager:
     def is_position_clear(
         self,
         position,
-        minimum_distance=150,
     ):
 
-        # Don't spawn directly on player.
+        # Only avoid spawning directly on the player.
+        #
+        # Asteroids don't collide with each other in this game,
+        # so overlapping asteroids at spawn isn't a functional
+        # problem — they'll drift apart naturally from their own
+        # velocities, the same way split children already spawn
+        # on top of each other today.
 
-        if (
+        return (
             position.distance_to(
                 self.player.position
             )
-            < self.min_spawn_distance
-        ):
-
-            return False
-
-
-        # Don't stack asteroids on top of each other.
-
-        for asteroid in self.asteroids:
-
-            if (
-                position.distance_to(
-                    asteroid.position
-                )
-                < minimum_distance
-            ):
-
-                return False
-
-
-        return True
+            >= self.min_spawn_distance
+        )
 
 
     # ======================================================
