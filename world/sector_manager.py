@@ -74,6 +74,12 @@ class SectorManager:
 
 
     @property
+    def starfield(self):
+
+        return self.config["starfield"]
+
+
+    @property
     def radius(self):
 
         return self.config["radius"]

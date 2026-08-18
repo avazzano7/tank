@@ -18,6 +18,7 @@ class Asteroid:
             "salvage_min": 15,
             "salvage_max": 25,
         },
+
         "medium": {
             "radius": 32,
             "health": 15,
@@ -29,6 +30,7 @@ class Asteroid:
             "salvage_min": 8,
             "salvage_max": 14,
         },
+
         "small": {
             "radius": 18,
             "health": 5,
@@ -48,17 +50,27 @@ class Asteroid:
         "small": None,
     }
 
+
     def __init__(
         self,
         position,
         size="large",
+        seed=None,
     ):
 
-        self.position = pygame.Vector2(position)
+        self.position = pygame.Vector2(
+            position
+        )
 
         self.size = size
 
         data = self.SIZES[size]
+
+        # Use a private random generator when a seed
+        # is provided. This makes procedural asteroids
+        # deterministic without affecting the rest
+        # of the game.
+        rng = random.Random(seed)
 
         self.radius = data["radius"]
         self.health = data["health"]
@@ -67,16 +79,17 @@ class Asteroid:
         self.salvage_min = data["salvage_min"]
         self.salvage_max = data["salvage_max"]
 
+
         # --------------------------------------------------
         # Movement
         # --------------------------------------------------
 
-        angle = random.uniform(
+        angle = rng.uniform(
             0,
             math.pi * 2
         )
 
-        speed = random.uniform(
+        speed = rng.uniform(
             data["speed_min"],
             data["speed_max"]
         )
@@ -86,25 +99,27 @@ class Asteroid:
             math.sin(angle)
         ) * speed
 
+
         # --------------------------------------------------
         # Rotation
         # --------------------------------------------------
 
-        self.rotation = random.uniform(
+        self.rotation = rng.uniform(
             0,
             360
         )
 
-        self.rotation_speed = random.uniform(
+        self.rotation_speed = rng.uniform(
             -1.5,
             1.5
         )
+
 
         # --------------------------------------------------
         # Shape
         # --------------------------------------------------
 
-        point_count = random.randint(
+        point_count = rng.randint(
             data["points_min"],
             data["points_max"]
         )
@@ -114,10 +129,12 @@ class Asteroid:
         for i in range(point_count):
 
             angle = (
-                (math.pi * 2 / point_count) * i
+                math.pi * 2
+                / point_count
+                * i
             )
 
-            distance = random.uniform(
+            distance = rng.uniform(
                 self.radius * 0.75,
                 self.radius
             )
@@ -129,9 +146,10 @@ class Asteroid:
                 )
             )
 
-    # ------------------------------------------------------
-    # Update
-    # ------------------------------------------------------
+
+    # ==================================================
+    # UPDATE
+    # ==================================================
 
     def update(self):
 
@@ -139,29 +157,41 @@ class Asteroid:
 
         self.rotation += self.rotation_speed
 
-    # ------------------------------------------------------
-    # Damage
-    # ------------------------------------------------------
 
-    def take_damage(self, amount):
+    # ==================================================
+    # DAMAGE
+    # ==================================================
+
+    def take_damage(
+        self,
+        amount,
+    ):
 
         self.health -= amount
 
         return self.health <= 0
 
-    # ------------------------------------------------------
-    # Get Split Size
-    # ------------------------------------------------------
+
+    # ==================================================
+    # GET SPLIT SIZE
+    # ==================================================
 
     def get_split_size(self):
 
-        return self.SPLIT_MAP[self.size]
+        return self.SPLIT_MAP[
+            self.size
+        ]
 
-    # ------------------------------------------------------
-    # Draw
-    # ------------------------------------------------------
 
-    def draw(self, screen, camera):
+    # ==================================================
+    # DRAW
+    # ==================================================
+
+    def draw(
+        self,
+        screen,
+        camera,
+    ):
 
         screen_position = (
             self.position - camera

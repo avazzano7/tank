@@ -17,15 +17,21 @@ from world.starfield import Starfield
 from world.hub_manager import HubManager
 from world.sector_manager import SectorManager
 from world.asteroid_manager import AsteroidManager
+from world.enemy_manager import EnemyManager
 from world.salvage_manager import SalvageManager
 from world.part_manager import PartManager
+from world.drone_manager import DroneManager
 
 from ui.hud import HUD
 from ui.inventory import InventoryScreen
 from ui.dock_prompt import DockPrompt
 from ui.hub_screen import HubScreen
 
-from sound_handling.ui import inventory_open_sound, inventory_close_sound
+from sound_handling.ui import (
+    inventory_open_sound,
+    inventory_close_sound
+)
+
 from sound_handling.player import death_sound
 
 
@@ -58,9 +64,11 @@ camera = pygame.Vector2(
     0
 )
 
-stars = Starfield()
-
 sector_manager = SectorManager()
+
+stars = Starfield(
+    sector_manager
+)
 
 hub_manager = HubManager(
     sector_manager
@@ -71,9 +79,18 @@ asteroid_manager = AsteroidManager(
     sector_manager
 )
 
+enemy_manager = EnemyManager(
+    player,
+    sector_manager
+)
+
 salvage_manager = SalvageManager()
 
 part_manager = PartManager()
+
+# Persists across sector transitions, like the player's own
+# progression — NOT recreated on TRANSITION/GAME_OVER.
+drone_manager = DroneManager()
 
 hud = HUD()
 
@@ -96,6 +113,10 @@ docked_hub = None
 bullets = []
 
 missiles = []
+
+
+# ==================================================
+# FONT
 # ==================================================
 
 font = pygame.font.SysFont(
@@ -115,9 +136,16 @@ state = game_state.EXPLORING
 # MAIN LOOP
 # ==================================================
 
-main_music = pygame.mixer.music.load("assets/sounds/music/Dark Man Piano.mp3")
+main_music = pygame.mixer.music.load(
+    "assets/sounds/music/Dark Man Piano.mp3"
+)
+
 pygame.mixer.music.set_volume(0.5)
-pygame.mixer.music.play(-1)  # Loop indefinitely
+
+pygame.mixer.music.play(
+    -1
+)
+
 
 running = True
 
@@ -140,11 +168,17 @@ while running:
         if event.type == pygame.KEYDOWN:
 
             if event.key == pygame.K_i:
+
                 if show_inventory:
+
                     inventory_close_sound.play()
+
                     show_inventory = False
+
                 else:
+
                     inventory_open_sound.play()
+
                     show_inventory = True
 
 
@@ -186,9 +220,13 @@ while running:
 
                 if event.key in purchase_keys:
 
-                    index = purchase_keys[event.key]
+                    index = purchase_keys[
+                        event.key
+                    ]
 
-                    summary = player.get_upgrade_summary()
+                    summary = (
+                        player.get_upgrade_summary()
+                    )
 
                     if index < len(summary):
 
@@ -199,21 +237,32 @@ while running:
 
                 advanced_keys = {
                     pygame.K_4: 0,
+                    pygame.K_5: 1,
                 }
 
                 if event.key in advanced_keys:
 
-                    index = advanced_keys[event.key]
+                    index = advanced_keys[
+                        event.key
+                    ]
 
-                    advanced_summary = player.get_advanced_summary()
+                    advanced_summary = (
+                        player.get_advanced_summary()
+                    )
 
                     if index < len(advanced_summary):
 
-                        entry_key = advanced_summary[index]["key"]
+                        entry_key = (
+                            advanced_summary[index]["key"]
+                        )
 
                         if entry_key == "missiles":
 
                             player.purchase_missile_upgrade()
+
+                        elif entry_key == "drones":
+
+                            player.purchase_drone_upgrade()
 
 
     # ==================================================
@@ -292,7 +341,9 @@ while running:
                     + direction * 20
                 )
 
-                stats = player.fire_missile()
+                stats = (
+                    player.fire_missile()
+                )
 
                 missiles.append(
                     Missile(
@@ -334,6 +385,15 @@ while running:
 
 
         # ----------------------------------------------
+        # Enemies
+        # ----------------------------------------------
+
+        enemy_manager.update(
+            dt
+        )
+
+
+        # ----------------------------------------------
         # Player / asteroid collision
         # ----------------------------------------------
 
@@ -341,8 +401,20 @@ while running:
             player
         )
 
+
+        # ----------------------------------------------
+        # Player / enemy collision
+        # ----------------------------------------------
+
+        enemy_manager.check_player_collision(
+            player
+        )
+
+
         if not player.is_alive():
+
             death_sound.play()
+
             state = game_state.GAME_OVER
 
 
@@ -354,9 +426,23 @@ while running:
 
         for bullet in bullets:
 
-            if asteroid_manager.check_bullet_collision(
-                bullet
-            ):
+            asteroid_hit = (
+                asteroid_manager.check_bullet_collision(
+                    bullet
+                )
+            )
+
+            enemy_hit = False
+
+            if not asteroid_hit:
+
+                enemy_hit = (
+                    enemy_manager.check_bullet_collision(
+                        bullet
+                    )
+                )
+
+            if asteroid_hit or enemy_hit:
 
                 continue
 
@@ -375,9 +461,23 @@ while running:
 
         for missile in missiles:
 
-            if asteroid_manager.check_missile_collision(
-                missile
-            ):
+            asteroid_hit = (
+                asteroid_manager.check_missile_collision(
+                    missile
+                )
+            )
+
+            enemy_hit = False
+
+            if not asteroid_hit:
+
+                enemy_hit = (
+                    enemy_manager.check_missile_collision(
+                        missile
+                    )
+                )
+
+            if asteroid_hit or enemy_hit:
 
                 continue
 
@@ -389,16 +489,50 @@ while running:
 
 
         # ----------------------------------------------
+        # Drone: autonomous targeting/firing
+        # ----------------------------------------------
+
+        drone_manager.update(
+            dt,
+            player,
+            asteroid_manager.asteroids,
+        )
+
+
+        remaining_drone_shots = []
+
+        for shot in drone_manager.shots:
+
+            if asteroid_manager.check_drone_shot_collision(
+                shot
+            ):
+
+                continue
+
+            remaining_drone_shots.append(
+                shot
+            )
+
+        drone_manager.shots = (
+            remaining_drone_shots
+        )
+
+
+        # ----------------------------------------------
         # Salvage: spawn drops from destroyed asteroids
         # ----------------------------------------------
 
-        drops = asteroid_manager.pop_drops()
+        drops = (
+            asteroid_manager.pop_drops()
+        )
 
         salvage_manager.spawn_from_drops(
             drops
         )
 
-        salvage_manager.update(dt)
+        salvage_manager.update(
+            dt
+        )
 
         salvage_manager.check_player_collision(
             player
@@ -409,13 +543,17 @@ while running:
         # Ship parts: spawn drops from destroyed asteroids
         # ----------------------------------------------
 
-        part_drops = asteroid_manager.pop_part_drops()
+        part_drops = (
+            asteroid_manager.pop_part_drops()
+        )
 
         part_manager.spawn_from_drops(
             part_drops
         )
 
-        part_manager.update(dt)
+        part_manager.update(
+            dt
+        )
 
         part_manager.check_player_collision(
             player
@@ -468,10 +606,22 @@ while running:
 
 
         # ----------------------------------------------
-        # Maintain asteroid population
+        # Drone shots
         # ----------------------------------------------
 
-        asteroid_manager.maintain_population()
+        active_drone_shots = []
+
+        for shot in drone_manager.shots:
+
+            if shot.update(dt):
+
+                active_drone_shots.append(
+                    shot
+                )
+
+        drone_manager.shots = (
+            active_drone_shots
+        )
 
 
     # ==================================================
@@ -517,16 +667,28 @@ while running:
             0
         )
 
+        stars = Starfield(
+            sector_manager
+        )
+        stars.draw(
+            screen,
+            camera
+        )
+
         bullets.clear()
 
         missiles.clear()
+
+        drone_manager.shots.clear()
 
         hub_manager = HubManager(
             sector_manager
         )
 
 
+        # ----------------------------------------------
         # New sector asteroid configuration
+        # ----------------------------------------------
 
         asteroid_manager = AsteroidManager(
             player,
@@ -534,12 +696,26 @@ while running:
         )
 
 
+        # ----------------------------------------------
+        # New sector enemy configuration
+        # ----------------------------------------------
+
+        enemy_manager = EnemyManager(
+            player,
+            sector_manager
+        )
+
+
+        # ----------------------------------------------
         # New sector salvage
+        # ----------------------------------------------
 
         salvage_manager = SalvageManager()
 
 
+        # ----------------------------------------------
         # New sector ship parts
+        # ----------------------------------------------
 
         part_manager = PartManager()
 
@@ -557,7 +733,9 @@ while running:
 
         if keys[pygame.K_r]:
 
-            sector_manager.load_sector(1)
+            sector_manager.load_sector(
+                1
+            )
 
             player.position = pygame.Vector2(
                 0,
@@ -575,11 +753,18 @@ while running:
 
             missiles.clear()
 
+            drone_manager.shots.clear()
+
             hub_manager = HubManager(
                 sector_manager
             )
 
             asteroid_manager = AsteroidManager(
+                player,
+                sector_manager
+            )
+
+            enemy_manager = EnemyManager(
                 player,
                 sector_manager
             )
@@ -628,7 +813,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Sector boundary
+        # ----------------------------------------------
 
         pygame.draw.circle(
             screen,
@@ -639,7 +826,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Hubs
+        # ----------------------------------------------
 
         hub_manager.draw(
             screen,
@@ -647,7 +836,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Asteroids
+        # ----------------------------------------------
 
         asteroid_manager.draw(
             screen,
@@ -655,7 +846,19 @@ while running:
         )
 
 
+        # ----------------------------------------------
+        # Enemies
+        # ----------------------------------------------
+
+        enemy_manager.draw(
+            screen,
+            camera
+        )
+
+
+        # ----------------------------------------------
         # Salvage
+        # ----------------------------------------------
 
         salvage_manager.draw(
             screen,
@@ -663,7 +866,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Ship parts
+        # ----------------------------------------------
 
         part_manager.draw(
             screen,
@@ -671,7 +876,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Bullets
+        # ----------------------------------------------
 
         for bullet in bullets:
 
@@ -681,7 +888,9 @@ while running:
             )
 
 
+        # ----------------------------------------------
         # Missiles
+        # ----------------------------------------------
 
         for missile in missiles:
 
@@ -691,7 +900,19 @@ while running:
             )
 
 
+        # ----------------------------------------------
+        # Drone
+        # ----------------------------------------------
+
+        drone_manager.draw(
+            screen,
+            camera
+        )
+
+
+        # ----------------------------------------------
         # Player
+        # ----------------------------------------------
 
         player.draw(
             screen,
@@ -699,7 +920,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Navigation
+        # ----------------------------------------------
 
         distance, radius = (
             sector_manager.get_progress(
@@ -708,7 +931,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # HUD
+        # ----------------------------------------------
 
         hud.draw(
             screen,
@@ -724,7 +949,9 @@ while running:
         )
 
 
+        # ----------------------------------------------
         # Dock prompt
+        # ----------------------------------------------
 
         if in_dock_range:
 
@@ -776,6 +1003,7 @@ while running:
             text,
             (220, 280)
         )
+
 
 
     elif state == game_state.GAME_OVER:

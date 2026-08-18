@@ -6,31 +6,9 @@ from core.settings import WIDTH, HEIGHT
 
 class Starfield:
 
-    def __init__(self):
+    def __init__(self, sector_manager):
 
-        self.layers = [
-            {
-                "count": 80,
-                "speed": 0.15,
-                "color": (90, 90, 90),
-                "size": 1,
-                "stars": [],
-            },
-            {
-                "count": 45,
-                "speed": 0.35,
-                "color": (150, 150, 150),
-                "size": 2,
-                "stars": [],
-            },
-            {
-                "count": 20,
-                "speed": 0.60,
-                "color": (230, 230, 230),
-                "size": 2,
-                "stars": [],
-            },
-        ]
+        self.layers = sector_manager.starfield
 
         for layer in self.layers:
 

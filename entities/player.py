@@ -11,6 +11,7 @@ from sound_handling.player import fire_sound, thrust_sound
 
 from core.upgrades_config import UPGRADE_TRACKS
 from core.missile_config import MISSILE_CONFIG
+from core.drone_config import DRONE_CONFIG
 
 
 class Player:
@@ -58,6 +59,9 @@ class Player:
 
         # 0 = locked, 1 = just unlocked, up to MISSILE_CONFIG["max_level"]
         self.missile_level = 0
+
+        # 0 = locked, 1 = just unlocked, up to DRONE_CONFIG["max_level"]
+        self.drone_level = 0
 
         self.thrust_channel = pygame.mixer.Channel(0)
 
@@ -299,12 +303,15 @@ class Player:
 
     def get_advanced_summary(self):
 
-        maxed = (
+        missile_maxed = (
             self.missile_level
             >= MISSILE_CONFIG["max_level"]
         )
 
-        cost = self.get_missile_upgrade_cost()
+        drone_maxed = (
+            self.drone_level
+            >= DRONE_CONFIG["max_level"]
+        )
 
         return [
             {
@@ -312,11 +319,90 @@ class Player:
                 "label": "Missiles",
                 "level": self.missile_level,
                 "max_level": MISSILE_CONFIG["max_level"],
-                "cost": cost,
-                "maxed": maxed,
+                "cost": self.get_missile_upgrade_cost(),
+                "maxed": missile_maxed,
                 "currency": "common",
             },
+            {
+                "key": "drones",
+                "label": "Drone",
+                "level": self.drone_level,
+                "max_level": DRONE_CONFIG["max_level"],
+                "cost": self.get_drone_upgrade_cost(),
+                "maxed": drone_maxed,
+                "currency": "uncommon",
+            },
         ]
+
+
+    # ------------------------------------------------------
+    # Drone
+    # ------------------------------------------------------
+
+    def has_drone(self):
+
+        return self.drone_level >= 1
+
+    def get_drone_stats(self, level=None):
+
+        if level is None:
+
+            level = self.drone_level
+
+        if level < 1:
+
+            return None
+
+        exponent = level - 1
+
+        return {
+            "damage": (
+                DRONE_CONFIG["base_damage"]
+                * DRONE_CONFIG["damage_multiplier"] ** exponent
+            ),
+            "fire_interval": (
+                DRONE_CONFIG["base_fire_interval"]
+                * DRONE_CONFIG["fire_interval_multiplier"] ** exponent
+            ),
+        }
+
+    def get_drone_upgrade_cost(self):
+
+        if self.drone_level >= DRONE_CONFIG["max_level"]:
+
+            return None
+
+        if self.drone_level == 0:
+
+            return DRONE_CONFIG["unlock_cost"]
+
+        exponent = self.drone_level - 1
+
+        return round(
+            DRONE_CONFIG["upgrade_base_cost"]
+            * DRONE_CONFIG["upgrade_cost_multiplier"] ** exponent
+        )
+
+    def purchase_drone_upgrade(self):
+
+        cost = self.get_drone_upgrade_cost()
+
+        if cost is None:
+
+            # Already maxed out.
+            return False
+
+        available = self.get_part_counts()["uncommon"]
+
+        if available < cost:
+
+            return False
+
+        self._spend_parts("uncommon", cost)
+
+        self.drone_level += 1
+
+        return True
 
 
     # ------------------------------------------------------
