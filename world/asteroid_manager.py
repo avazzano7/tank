@@ -176,11 +176,13 @@ class AsteroidManager:
 
             size = rng.choices(
                 population=[
+                    "galactal",
                     "large",
                     "medium",
                     "small",
                 ],
                 weights=[
+                    self.size_weights["galactal"],
                     self.size_weights["large"],
                     self.size_weights["medium"],
                     self.size_weights["small"],

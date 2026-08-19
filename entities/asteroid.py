@@ -7,6 +7,17 @@ import pygame
 class Asteroid:
 
     SIZES = {
+        "galactal": {
+            "radius": 100,
+            "health": 50,
+            "speed_min": 0.1,
+            "speed_max": 0.7,
+            "points_min": 15,
+            "points_max": 25,
+            "contact_damage": 50,
+            "salvage_min": 25,
+            "salvage_max": 35,
+        },
         "large": {
             "radius": 55,
             "health": 30,
@@ -45,6 +56,7 @@ class Asteroid:
     }
 
     SPLIT_MAP = {
+        "galactal": "large",
         "large": "medium",
         "medium": "small",
         "small": None,

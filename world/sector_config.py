@@ -52,9 +52,10 @@ SECTOR_CONFIGS = {
         # Asteroids
         # ----------------------------------------------
 
-        "max_asteroids": 300,
+        "max_asteroids": 12000,
 
         "asteroid_size_weights": {
+            "galactal": 0.05,
             "large": 0.60,
             "medium": 0.30,
             "small": 0.10,
@@ -81,7 +82,7 @@ SECTOR_CONFIGS = {
         },
 
         # Seconds between enemy spawns.
-        "enemy_spawn_rate": 30,
+        "enemy_spawn_rate": 10,
 
         # ----------------------------------------------
         # Boss
